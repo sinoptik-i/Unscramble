@@ -1,35 +1,34 @@
 package com.example.android.unscramble.ui.game
 
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
 //class GameViewModel{
 class GameViewModel : ViewModel() {
 
-    private var _score = 0
-    val score
+    private var _score = MutableLiveData(0)
+    val score: LiveData<Int>
         get() = _score
+
     private var wordsList: MutableList<String> = mutableListOf()
 
+    private var _currentWordCount = MutableLiveData(wordsList.count())
+    val currentWordCount: LiveData<Int>
+        get() = _currentWordCount
 
-    private val currentWordCount
-        get() = wordsList.count()
-
-    private lateinit var _currentScrambledWord: String
+    private var _currentScrambledWord = MutableLiveData<String>()
     val currentScrambledWord
         get() = _currentScrambledWord
 
 
-     lateinit var currentWord: String
-    /*get() = if (wordsList.isEmpty()){
-        ""
-    }
-else
-    wordsList.last()*/
+    lateinit var currentWord: String
+
     init {
         Log.d("GameFragment", "GameViewModel created!")
         getNextWord()
-       // currentWord=wordsList.last()
+        // currentWord=wordsList.last()
     }
 
 
@@ -41,7 +40,7 @@ else
     }
 
     private fun increaseScore() {
-        _score += SCORE_INCREASE
+        _score.value = _score.value?.plus(SCORE_INCREASE)
     }
 
     fun getNextWord() {
@@ -49,25 +48,42 @@ else
         while (wordsList.contains(currentWord)) {
             currentWord = allWordsList.random()
         }
-        _currentScrambledWord = currentWord
-        while (_currentScrambledWord.equals(currentWord, false)) {
-            val tempWord = _currentScrambledWord.toCharArray()
+        _currentScrambledWord.value = currentWord
+        while (_currentScrambledWord.value.equals(currentWord, false)) {
+            val tempWord = _currentScrambledWord.value!!.toCharArray()
             tempWord.shuffle()
-            _currentScrambledWord = String(tempWord)
-            // currentWord.toCharArray().shuffle().toString()// String(shuffledCurrentWord)
+            _currentScrambledWord.value = String(tempWord)
         }
         wordsList.add(currentWord)
+        _currentWordCount.value=wordsList.count()
     }
 
+   /* private fun getNextWord() {
+        currentWord = allWordsList.random()
+        val tempWord = currentWord.toCharArray()
+        tempWord.shuffle()
+
+        while (String(tempWord).equals(currentWord, false)) {
+            tempWord.shuffle()
+        }
+        if (wordsList.contains(currentWord)) {
+            getNextWord()
+        } else {
+            _currentScrambledWord.value = String(tempWord)
+            _currentWordCount.value=(_currentWordCount.value)?.inc()
+            wordsList.add(currentWord)
+        }
+    }*/
+
     fun nextWord(): Boolean {
-        return if (currentWordCount < MAX_NO_OF_WORDS) {
+        return if (_currentWordCount.value!! < MAX_NO_OF_WORDS) {
             getNextWord()
             true
         } else false
     }
 
-    fun reinitializeData(){
-        _score=0;
+    fun reinitializeData() {
+        _score.value = 0;
         wordsList.clear()
         getNextWord()
     }
